@@ -27,6 +27,18 @@ hqDefine("reports/js/single_form", [
     dataCorrections,
     Clipboard
 ) {
+    var initClipboard = function($container) {
+        var clipboard = new Clipboard('.copy-xml', { text: function() { return $('#form-xml pre', $container).text(); } }),
+            $copyBtn = $('.copy-xml', $container);
+        $copyBtn.tooltip({
+            title: gettext("Copied!"),
+        });
+        clipboard.on('success', function() {
+            $copyBtn.tooltip('show');
+            window.setTimeout(function() { $copyBtn.tooltip('hide'); }, 1000);
+        });
+    };
+
     var initSingleForm = function(options) {
         assertProperties.assert(options, ['instance_id', 'form_question_map', 'ordered_question_values'], ['container']);
 
@@ -97,15 +109,17 @@ hqDefine("reports/js/single_form", [
             $('#resave-spinner', $container).show();
         });
 
-        var clipboard = new Clipboard('.copy-xml', { text: function() { return $('#form-xml pre', $container).text(); } }),
-            $copyBtn = $('.copy-xml', $container);
-        $copyBtn.tooltip({
-            title: gettext("Copied!"),
-        });
-        clipboard.on('success', function() {
-            $copyBtn.tooltip('show');
-            window.setTimeout(function() { $copyBtn.tooltip('hide'); }, 1000);
-        });
+        if (window.USE_REQUIREJS && Clipboard) {
+            initClipboard($container);
+        } else {
+            $.when(
+                $.getScript(hqImport("hqwebapp/js/initial_page_data").get("clipboardScript"))
+            ).done(function () {
+                // overwrite the Clipboard parameter for this module with the global created by the getScript
+                Clipboard = window.Clipboard;
+                initClipboard($container);
+            });
+        }
     };
 
     return {
