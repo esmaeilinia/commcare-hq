@@ -184,8 +184,6 @@ class LocationsListView(BaseLocationView):
     page_title = ugettext_noop("Organization Structure")
     template_name = 'locations/manage/locations.html'
 
-    @use_jquery_ui
-    @use_select2_v4
     @method_decorator(check_pending_locations_import())
     def dispatch(self, request, *args, **kwargs):
         return super(LocationsListView, self).dispatch(request, *args, **kwargs)
@@ -270,9 +268,7 @@ class LocationTypesView(BaseDomainView):
         return reverse(LocationsListView.urlname, args=[self.domain])
 
     @method_decorator(can_edit_location_types)
-    @use_jquery_ui
     @method_decorator(check_pending_locations_import())
-    @use_select2
     def dispatch(self, request, *args, **kwargs):
         return super(LocationTypesView, self).dispatch(request, *args, **kwargs)
 
@@ -484,7 +480,6 @@ class NewLocationView(BaseLocationView):
     creates_new_location = True
     form_tab = 'basic'
 
-    @use_multiselect
     @method_decorator(check_pending_locations_import(redirect=True))
     def dispatch(self, request, *args, **kwargs):
         return super(NewLocationView, self).dispatch(request, *args, **kwargs)
