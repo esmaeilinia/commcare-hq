@@ -13,15 +13,6 @@ from corehq.toggles import PUBLISH_CUSTOM_REPORTS
 SESSION_USER_KEY_PREFIX = "session_user_doc_%s"
 
 
-def is_public_reports(view_kwargs, request):
-    return (
-        request.user.is_anonymous and
-        'domain' in view_kwargs and
-        request.path.startswith('/a/{}/reports/custom'.format(view_kwargs['domain'])) and
-        PUBLISH_CUSTOM_REPORTS.enabled(view_kwargs['domain'])
-    )
-
-
 class UsersMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response=None):
@@ -53,6 +44,4 @@ class UsersMiddleware(MiddlewareMixin):
                     request.couch_user = InvalidUser()
                 if request.couch_user:
                     request.couch_user.current_domain = domain
-        elif is_public_reports(view_kwargs, request):
-            request.couch_user = AnonymousCouchUser()
         return None

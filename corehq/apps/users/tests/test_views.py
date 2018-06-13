@@ -55,7 +55,6 @@ class TestMobileWorkerListView(TestCase):
                 self.domain,
             )
         )
-        self.assertFalse(user.is_anonymous)
 
 
 @generate_cases((
