@@ -75,8 +75,7 @@ from corehq.apps.users.decorators import require_can_edit_commcare_users
 from corehq.apps.users.forms import (
     CommCareAccountForm, CommCareUserFormSet, CommtrackUserForm,
     MultipleSelectionForm, ConfirmExtraUserChargesForm, NewMobileWorkerForm,
-    SelfRegistrationForm, SetUserPasswordForm, NewAnonymousMobileWorkerForm,
-    CommCareUserFilterForm
+    SelfRegistrationForm, SetUserPasswordForm, CommCareUserFilterForm,
 )
 from corehq.apps.users.models import CommCareUser, CouchUser
 from corehq.apps.users.const import ANONYMOUS_USERNAME, ANONYMOUS_FIRSTNAME, ANONYMOUS_LASTNAME
@@ -572,20 +571,6 @@ class MobileWorkerListView(HQJSONResponseMixin, BaseUserSettingsView):
 
     @property
     @memoized
-    def new_anonymous_mobile_worker_form(self):
-        if self.request.method == "POST":
-            return NewAnonymousMobileWorkerForm(self.request.project, self.couch_user, self.request.POST)
-        return NewAnonymousMobileWorkerForm(self.request.project, self.couch_user)
-
-    @property
-    def _mobile_worker_form(self):
-        if self.request.POST.get('is_anonymous'):
-            return self.new_anonymous_mobile_worker_form
-        else:
-            return self.new_mobile_worker_form
-
-    @property
-    @memoized
     def custom_data(self):
         return CustomDataEditor(
             field_view=UserFieldsView,
@@ -602,9 +587,7 @@ class MobileWorkerListView(HQJSONResponseMixin, BaseUserSettingsView):
         else:
             bulk_download_url = reverse("download_commcare_users", args=[self.domain])
         return {
-            'has_anonymous_user': CouchUser.get_anonymous_mobile_worker(self.domain) is not None,
             'new_mobile_worker_form': self.new_mobile_worker_form,
-            'new_anonymous_mobile_worker_form': self.new_anonymous_mobile_worker_form,
             'custom_fields_form': self.custom_data.form,
             'custom_fields': [f.slug for f in self.custom_data.fields],
             'custom_field_names': [f.label for f in self.custom_data.fields],
@@ -783,7 +766,7 @@ class MobileWorkerListView(HQJSONResponseMixin, BaseUserSettingsView):
 
         self.request.POST = form_data
 
-        is_valid = lambda: self._mobile_worker_form.is_valid() and self.custom_data.is_valid()
+        is_valid = lambda: self.new_mobile_worker_form.is_valid() and self.custom_data.is_valid()
         if not is_valid():
             return {'error': _("Forms did not validate")}
 

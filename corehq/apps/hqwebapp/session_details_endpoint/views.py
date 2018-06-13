@@ -60,14 +60,3 @@ class SessionDetailsView(View):
             'domains': couch_user.domains,
             'anonymous': anonymous
         })
-
-    def _get_anonymous_user_details(self, domain):
-        couch_user = CouchUser.get_anonymous_mobile_worker(domain)
-        if not couch_user:
-            raise Http404
-        user = couch_user.get_django_user()
-        try:
-            auth_token = user.auth_token.key
-        except Token.DoesNotExist:
-            raise Http404  # anonymous user must have an auth token
-        return user, couch_user, auth_token
