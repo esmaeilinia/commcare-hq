@@ -86,7 +86,7 @@ from corehq.apps.users.util import can_add_extra_mobile_workers, format_username
 from corehq.apps.users.exceptions import InvalidMobileWorkerRequest
 from corehq.apps.users.views import BaseUserSettingsView, BaseEditUserView, get_domain_languages
 from corehq.const import USER_DATE_FORMAT, GOOGLE_PLAY_STORE_COMMCARE_URL
-from corehq.toggles import SUPPORT, ANONYMOUS_WEB_APPS_USAGE, FILTERED_BULK_USER_DOWNLOAD
+from corehq.toggles import SUPPORT, FILTERED_BULK_USER_DOWNLOAD
 from corehq.util.workbook_json.excel import JSONReaderError, HeaderValueError, \
     WorksheetNotFound, WorkbookJSONReader, enforce_string_type, StringTypeRequiredError, \
     InvalidExcelFileException
@@ -784,15 +784,10 @@ class MobileWorkerListView(HQJSONResponseMixin, BaseUserSettingsView):
         self.request.POST = form_data
 
         is_valid = lambda: self._mobile_worker_form.is_valid() and self.custom_data.is_valid()
-        if form_data.get('is_anonymous') and ANONYMOUS_WEB_APPS_USAGE.enabled(self.domain):
-            if not is_valid():
-                return {'error': _("Forms did not validate")}
-            couch_user = self._build_anonymous_commcare_user()
-        else:
-            if not is_valid():
-                return {'error': _("Forms did not validate")}
+        if not is_valid():
+            return {'error': _("Forms did not validate")}
 
-            couch_user = self._build_commcare_user()
+        couch_user = self._build_commcare_user()
 
         return {
             'success': True,
@@ -801,25 +796,6 @@ class MobileWorkerListView(HQJSONResponseMixin, BaseUserSettingsView):
                 args=[self.domain, couch_user.userID]
             )
         }
-
-    def _build_anonymous_commcare_user(self):
-        username = ANONYMOUS_USERNAME
-        password = self.new_anonymous_mobile_worker_form.cleaned_data['password']
-        first_name = ANONYMOUS_FIRSTNAME
-        last_name = ANONYMOUS_LASTNAME
-        location_id = self.new_anonymous_mobile_worker_form.cleaned_data['location_id']
-
-        return CommCareUser.create(
-            self.domain,
-            format_username(username, self.domain),
-            password,
-            device_id="Generated from HQ",
-            first_name=first_name,
-            last_name=last_name,
-            user_data=self.custom_data.get_data_to_save(),
-            is_anonymous=True,
-            location=SQLLocation.objects.get(location_id=location_id) if location_id else None,
-        )
 
     def _build_commcare_user(self):
         username = self.new_mobile_worker_form.cleaned_data['username']
